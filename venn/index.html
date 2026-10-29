@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UE, euro y Schengen: diagrama de Venn</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb;
+    --page: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --hairline: #e1e0d9;
+    --ue: #2a78d6;
+    --euro: #eb6834;
+    --schengen: #1baf7a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.45; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 6px; }
+  .sub { color: var(--ink-2); margin: 0 0 18px; max-width: 760px; }
+  .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; margin: 4px 4px 10px; font-size: .95rem; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .legend i { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+  svg { width: 100%; height: auto; display: block; }
+  .set { fill-opacity: .14; stroke-width: 2.5; transition: fill-opacity .15s; }
+  .set.on { fill-opacity: .30; }
+  .setlabel { font-weight: 700; font-size: 20px; }
+  .chip rect { fill: #ffffff; stroke: rgba(11,11,11,.18); }
+  .chip text { font-size: 12px; font-weight: 600; fill: var(--ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .chip { cursor: default; }
+  .chip:hover rect { stroke: var(--ink); stroke-width: 1.5; }
+  .empty text { fill: var(--muted); font-size: 13px; font-style: italic; text-anchor: middle; }
+  .count { font-size: 12px; fill: var(--ink-2); text-anchor: middle; }
+  #tip { position: fixed; pointer-events: none; background: var(--ink); color: #fff; font-size: 13px;
+         padding: 6px 9px; border-radius: 6px; opacity: 0; transition: opacity .1s; max-width: 240px; }
+  .notes { font-size: .88rem; color: var(--ink-2); margin-top: 14px; }
+  .notes p { margin: 4px 0; }
+  details { margin-top: 18px; }
+  summary { cursor: pointer; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: .9rem; background: var(--surface); }
+  th, td { border-bottom: 1px solid var(--hairline); padding: 5px 8px; text-align: left; }
+  td.c { text-align: center; }
+  a { color: #1c5cab; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ningún país de la UE se queda fuera del euro y de Schengen a la vez</h1>
+  <p class="sub">Países según si pertenecen a la Unión Europea, a la zona euro y al espacio Schengen (situación en octubre de 2026). Pasa el ratón por un país para ver su nombre o por la leyenda para resaltar cada conjunto.</p>
+
+  <div class="card">
+    <div class="legend" id="legend">
+      <span data-set="ue"><i style="background:var(--ue)"></i>Unión Europea (27)</span>
+      <span data-set="euro"><i style="background:var(--euro)"></i>Zona euro (21)</span>
+      <span data-set="schengen"><i style="background:var(--schengen)"></i>Espacio Schengen (29)</span>
+    </div>
+    <svg id="venn" viewBox="0 0 900 700" role="img"
+         aria-label="Diagrama de Venn con tres círculos: UE, zona euro y Schengen. 19 países están en los tres; Irlanda y Chipre en UE y euro sin Schengen; seis países en UE y Schengen sin euro; Islandia, Noruega, Suiza y Liechtenstein solo en Schengen. Las zonas UE sola, euro sola y euro con Schengen fuera de la UE están vacías."></svg>
+  </div>
+
+  <div class="notes">
+    <p><strong>Cómo se lee:</strong> cada círculo es un conjunto y cada zona es una combinación posible. En un diagrama de Venn se dibujan todas las combinaciones, también las que no tienen ningún país (marcadas con «0»).</p>
+    <p><strong>Nota:</strong> Andorra, Mónaco, San Marino y el Vaticano usan el euro por acuerdo con la UE, pero no forman parte de la zona euro, así que no se incluyen. Chipre tiene previsto entrar en Schengen en 2027.</p>
+    <p><strong>Fuente:</strong> Unión Europea, <a href="https://european-union.europa.eu/principles-countries-history/eu-countries_es">Países de la UE</a>, <a href="https://european-union.europa.eu/institutions-law-budget/euro/countries-using-euro_es">Países que utilizan el euro</a> y <a href="https://home-affairs.ec.europa.eu/policies/schengen/schengen-area_en">Espacio Schengen</a>. Datos: <a href="../data/paises_ue_euro_schengen.csv">CSV</a>.</p>
+  </div>
+
+  <details>
+    <summary>Ver los datos en tabla</summary>
+    <table id="tabla"><thead><tr><th>País</th><th>Código</th><th>UE</th><th>Euro</th><th>Schengen</th></tr></thead><tbody></tbody></table>
+  </details>
+</main>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const countries = [
+  // [código, nombre, UE, euro, Schengen]
+  ["AT","Austria",1,1,1],["BE","Bélgica",1,1,1],["BG","Bulgaria",1,1,1],["HR","Croacia",1,1,1],
+  ["EE","Estonia",1,1,1],["FI","Finlandia",1,1,1],["FR","Francia",1,1,1],["DE","Alemania",1,1,1],
+  ["GR","Grecia",1,1,1],["IT","Italia",1,1,1],["LV","Letonia",1,1,1],["LT","Lituania",1,1,1],
+  ["LU","Luxemburgo",1,1,1],["MT","Malta",1,1,1],["NL","Países Bajos",1,1,1],["PT","Portugal",1,1,1],
+  ["SK","Eslovaquia",1,1,1],["SI","Eslovenia",1,1,1],["ES","España",1,1,1],
+  ["IE","Irlanda",1,1,0],["CY","Chipre",1,1,0],
+  ["CZ","Chequia",1,0,1],["DK","Dinamarca",1,0,1],["HU","Hungría",1,0,1],["PL","Polonia",1,0,1],
+  ["RO","Rumanía",1,0,1],["SE","Suecia",1,0,1],
+  ["IS","Islandia",0,0,1],["NO","Noruega",0,0,1],["CH","Suiza",0,0,1],["LI","Liechtenstein",0,0,1]
+];
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("venn");
+const R = 230;
+const sets = {
+  ue:       {cx: 340, cy: 250, color: "var(--ue)",       label: "Unión Europea", lx: 125, ly: 40},
+  euro:     {cx: 560, cy: 250, color: "var(--euro)",     label: "Zona euro",     lx: 790, ly: 40},
+  schengen: {cx: 450, cy: 430, color: "var(--schengen)", label: "Espacio Schengen", lx: 450, ly: 690}
+};
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  (parent || svg).appendChild(e); return e;
+}
+const circles = {};
+for (const k in sets) {
+  const s = sets[k];
+  circles[k] = el("circle", {cx: s.cx, cy: s.cy, r: R, class: "set", fill: s.color, stroke: s.color});
+}
+for (const k in sets) {
+  const s = sets[k];
+  const t = el("text", {x: s.lx, y: s.ly, class: "setlabel", "text-anchor": "middle", fill: "var(--ink)"});
+  t.textContent = s.label;
+}
+// Regiones: [UE, euro, Schengen] -> centro donde se colocan los países
+const regions = [
+  {key: [1,1,1], x: 450, y: 304, cols: 4},
+  {key: [1,1,0], x: 450, y: 126, cols: 2},
+  {key: [1,0,1], x: 296, y: 406, cols: 2},
+  {key: [0,0,1], x: 450, y: 558, cols: 4},
+  {key: [1,0,0], x: 215, y: 215, cols: 1},
+  {key: [0,1,0], x: 685, y: 215, cols: 1},
+  {key: [0,1,1], x: 604, y: 406, cols: 1}
+];
+const tip = document.getElementById("tip");
+const memb = c => [c[2] ? "UE" : null, c[3] ? "euro" : null, c[4] ? "Schengen" : null].filter(Boolean).join(" + ");
+for (const reg of regions) {
+  const list = countries.filter(c => c[2] === reg.key[0] && c[3] === reg.key[1] && c[4] === reg.key[2]);
+  if (!list.length) {
+    const g = el("g", {class: "empty"});
+    const t = el("text", {x: reg.x, y: reg.y}, g); t.textContent = "0 países";
+    continue;
+  }
+  const w = 40, h = 22, gap = 4;
+  const rows = Math.ceil(list.length / reg.cols);
+  list.forEach((c, i) => {
+    const row = Math.floor(i / reg.cols), col = i % reg.cols;
+    const inRow = Math.min(reg.cols, list.length - row * reg.cols);
+    const x = reg.x - (inRow * w + (inRow - 1) * gap) / 2 + col * (w + gap);
+    const y = reg.y - (rows * h + (rows - 1) * gap) / 2 + row * (h + gap);
+    const g = el("g", {class: "chip", tabindex: 0, "aria-label": c[1] + ": " + memb(c)});
+    el("rect", {x, y, width: w, height: h, rx: 5}, g);
+    const t = el("text", {x: x + w / 2, y: y + h / 2}, g); t.textContent = c[0];
+    const show = ev => { tip.innerHTML = "<strong>" + c[1] + "</strong><br>" + memb(c); tip.style.opacity = 1;
+      const px = ev.clientX ?? g.getBoundingClientRect().x, py = ev.clientY ?? g.getBoundingClientRect().y;
+      tip.style.left = (px + 14) + "px"; tip.style.top = (py + 14) + "px"; };
+    g.addEventListener("mousemove", show); g.addEventListener("focus", show);
+    g.addEventListener("mouseleave", () => tip.style.opacity = 0); g.addEventListener("blur", () => tip.style.opacity = 0);
+  });
+  const ct = el("text", {x: reg.x, y: reg.y + (rows * h + (rows - 1) * gap) / 2 + 16, class: "count"});
+  ct.textContent = list.length + (list.length === 1 ? " país" : " países");
+}
+// Resaltar un conjunto desde la leyenda
+document.querySelectorAll("#legend span").forEach(s => {
+  const k = s.dataset.set;
+  s.addEventListener("mouseenter", () => circles[k].classList.add("on"));
+  s.addEventListener("mouseleave", () => circles[k].classList.remove("on"));
+});
+// Tabla
+const tb = document.querySelector("#tabla tbody");
+const yes = v => v ? "Sí" : "—";
+[...countries].sort((a, b) => a[1].localeCompare(b[1], "es")).forEach(c => {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `<td>${c[1]}</td><td>${c[0]}</td><td class="c">${yes(c[2])}</td><td class="c">${yes(c[3])}</td><td class="c">${yes(c[4])}</td>`;
+  tb.appendChild(tr);
+});
+</script>
+</body>
+</html>
